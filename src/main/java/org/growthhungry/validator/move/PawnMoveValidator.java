@@ -1,13 +1,14 @@
-package org.growthhungry.checker.move;
+package org.growthhungry.validator.move;
 
-import org.growthhungry.Color;
+import org.growthhungry.model.enums.Color;
+import org.growthhungry.model.enums.PieceType;
 import org.growthhungry.model.Coordinate;
 
-public class PawnMoveValidityChecker implements PieceMoveValidityChecker {
+public class PawnMoveValidator extends MoveValidator {
 
     private final boolean isWhite;
 
-    public PawnMoveValidityChecker(Color color) {
+    public PawnMoveValidator(Color color) {
         this.isWhite = color.equals(Color.WHITE);
     }
 
@@ -23,7 +24,7 @@ public class PawnMoveValidityChecker implements PieceMoveValidityChecker {
         }
 
         if (dx == 0 && dy == 2 * direction &&
-                ((isWhite && from.getY() == 2) || (!isWhite && from.getY() == 7))) {
+                ((isWhite && from.getY() == 0) || (!isWhite && from.getY() == 6))) {
             return true;
         }
 
@@ -33,4 +34,10 @@ public class PawnMoveValidityChecker implements PieceMoveValidityChecker {
 
         return false;
     }
+
+    @Override
+    public PieceType getPieceType() {
+        return PieceType.PAWN;
+    }
+
 }

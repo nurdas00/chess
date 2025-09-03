@@ -1,4 +1,4 @@
-package org.growthhungry;
+package org.growthhungry.model.enums;
 
 public enum PieceType {
     PAWN,

@@ -2,8 +2,8 @@ package org.growthhungry.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.growthhungry.Color;
-import org.growthhungry.PieceType;
+import org.growthhungry.model.enums.Color;
+import org.growthhungry.model.enums.PieceType;
 
 @Getter
 @Setter

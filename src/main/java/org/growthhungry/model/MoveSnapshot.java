@@ -7,7 +7,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class Coordinate {
-    private int x;
-    private int y;
+public class MoveSnapshot {
+    private Coordinate from;
+    private Coordinate to;
+    private Piece moved;
+    private Piece captured;
 }

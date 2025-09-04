@@ -24,7 +24,7 @@ public class PawnMoveValidator extends MoveValidator {
         }
 
         if (dx == 0 && dy == 2 * direction &&
-                ((isWhite && from.getY() == 0) || (!isWhite && from.getY() == 6))) {
+                ((isWhite && from.getY() == 1) || (!isWhite && from.getY() == 6))) {
             return true;
         }
 

@@ -1,11 +1,9 @@
 package org.growthhungry.model.record;
 
-public record MoveResult(boolean success, boolean gaveCheck, String reason) {
-    public static MoveResult ok(boolean gaveCheck) {
-        return new MoveResult(true, gaveCheck, null);
-    }
+import org.growthhungry.model.enums.MoveResultType;
 
-    public static MoveResult fail(String reason) {
-        return new MoveResult(false, false, reason);
+public record MoveResult(MoveResultType resultType, String message) {
+    public static MoveResult of(MoveResultType resultType, String message) {
+        return new MoveResult(resultType, message);
     }
 }

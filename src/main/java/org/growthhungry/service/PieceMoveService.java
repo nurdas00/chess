@@ -1,47 +1,179 @@
 package org.growthhungry.service;
 
+import lombok.RequiredArgsConstructor;
+import org.growthhungry.model.enums.MoveResultType;
 import org.growthhungry.model.enums.PieceType;
-import org.growthhungry.model.record.MoveResult;
 import org.growthhungry.model.enums.Color;
 import org.growthhungry.model.MoveSnapshot;
+import org.growthhungry.model.record.MoveResult;
 import org.growthhungry.validator.move.MoveValidator;
 import org.growthhungry.validator.factory.MoveValidatorFactory;
 import org.growthhungry.model.Board;
 import org.growthhungry.model.Coordinate;
 import org.growthhungry.model.Piece;
 
-public class PieceMoveService {
+import java.util.ArrayList;
+import java.util.List;
 
-    public MoveResult move(Board board, Coordinate from, Coordinate to, Color mover) {
+@RequiredArgsConstructor
+public class PieceMoveService {
+    private final Board board;
+
+    public MoveResult move(Coordinate from, Coordinate to, Color mover) {
         Piece piece = board.getPieceAt(from.getX(), from.getY());
 
         if(piece == null || !mover.equals(piece.getColor())) {
-            return MoveResult.fail("Invalid coordinates");
+            return MoveResult.of(MoveResultType.FAIL, "Invalid coordinates");
         }
 
         MoveValidator validator = MoveValidatorFactory.getMoveValidator(piece.getPieceType(), piece.getColor());
         if(!validator.check(from, to, piece, board)) {
-            return MoveResult.fail("Invalid move");
+            return MoveResult.of(MoveResultType.FAIL, "Invalid move");
         }
 
-        Color opponent = (mover == Color.WHITE) ? Color.BLACK : Color.WHITE;
+        Color opponent = opposite(mover);
 
         MoveSnapshot snap = board.makeMove(from, to);
 
-        if (isKingInCheck(board, mover)) {
+        if (isKingInCheck(mover)) {
             board.undoMove(snap);
-            return MoveResult.fail("Check");
+            return MoveResult.of(MoveResultType.FAIL, "You are under check. Try another move");
         }
 
         if(piece.getPieceType().equals(PieceType.KING)) {
             board.moveKing(mover, to);
         }
 
-        boolean gaveCheck = isKingInCheck(board, opponent);
-        return MoveResult.ok(gaveCheck);
+        boolean gaveCheck = isKingInCheck(opponent);
+
+        if(gaveCheck) {
+            if(isMate(opponent)) {
+                board.setActive(false);
+                return MoveResult.of(MoveResultType.MATE, "Mate, " + mover.name() + " won");
+            }
+            return MoveResult.of(MoveResultType.CHECK, "CHECK");
+        }
+
+        return MoveResult.of(MoveResultType.OK, opponent.name() + "s turn to move");
     }
 
-    private boolean isSquareAttacked(Board board, Coordinate target, Color byColor) {
+    private boolean isMate(Color defenderColor) {
+        Color attackerColor = (defenderColor == Color.WHITE) ? Color.BLACK : Color.WHITE;
+        Coordinate kingC = board.getKing(defenderColor);
+        if (kingC == null) throw new IllegalStateException("King not found: " + defenderColor);
+
+        if (kingHasEscape(kingC, defenderColor, attackerColor)) {
+            return false;
+        }
+
+        List<Coordinate> attackers = findAttackers(kingC, attackerColor);
+
+        if (attackers.size() >= 2) {
+            return true;
+        }
+
+        Coordinate checkerSq = attackers.get(0);
+        if (canAnyMoveTo(defenderColor, checkerSq, kingC)) {
+            return false;
+        }
+
+        Piece checker = board.getPieceAt(checkerSq);
+        if (checker != null && checker.getPieceType() != PieceType.KNIGHT) {
+            for (Coordinate blockSq : squaresBetween(kingC, checkerSq)) {
+                if (canAnyMoveTo(defenderColor, blockSq, kingC)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    private boolean kingHasEscape(Coordinate kingC, Color defenderColor, Color attackerColor) {
+        int kx = kingC.getX(), ky = kingC.getY();
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+                Coordinate to = new Coordinate(kx + dx, ky + dy);
+                if (!board.isInside(to)) continue;
+
+                Piece dst = board.getPieceAt(to);
+                if (dst != null && dst.getColor() == defenderColor) continue;
+
+                MoveSnapshot snap = board.makeMove(kingC, to);
+                board.moveKing(defenderColor, to);
+
+                boolean safe = !isSquareAttacked(to, attackerColor);
+
+                board.undoMove(snap);
+                board.moveKing(defenderColor, kingC);
+
+                if (safe) return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Coordinate> findAttackers(Coordinate target, Color byColor) {
+        List<Coordinate> res = new ArrayList<>();
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                Piece p = board.getPieceAt(x, y);
+                if (p == null || p.getColor() != byColor) continue;
+
+                MoveValidator v = MoveValidatorFactory.getMoveValidator(p.getPieceType(), p.getColor());
+                if (v.check(new Coordinate(x, y), target, p, board)) {
+                    res.add(new Coordinate(x, y));
+                }
+            }
+        }
+        return res;
+    }
+
+    private boolean canAnyMoveTo(Color defenderColor, Coordinate toSq, Coordinate kingC) {
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                Piece p = board.getPieceAt(x, y);
+                if (p == null || p.getColor() != defenderColor) continue;
+                if (p.getPieceType() == PieceType.KING) continue;
+
+                Coordinate from = new Coordinate(x, y);
+
+                MoveValidator v = MoveValidatorFactory.getMoveValidator(p.getPieceType(), p.getColor());
+                if (!v.check(from, toSq, p, board)) continue;
+
+                MoveSnapshot snap = board.makeMove(from, toSq);
+
+                boolean kingSafe = !isSquareAttacked(kingC, opposite(defenderColor));
+
+                board.undoMove(snap);
+
+                if (kingSafe) return true;
+            }
+        }
+        return false;
+    }
+
+    private List<Coordinate> squaresBetween(Coordinate a, Coordinate b) {
+        List<Coordinate> path = new ArrayList<>();
+        int dx = Integer.compare(b.getX(), a.getX());
+        int dy = Integer.compare(b.getY(), a.getY());
+
+        int x = a.getX() + dx, y = a.getY() + dy;
+        while (x != b.getX() || y != b.getY()) {
+            path.add(new Coordinate(x, y));
+            x += dx; y += dy;
+        }
+
+        if(!path.isEmpty()) {
+            path.remove(path.size() - 1);
+        }
+        return path;
+    }
+
+    private boolean isSquareAttacked(Coordinate target, Color byColor) {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 Piece piece = board.getPieceAt(x, y);
@@ -56,9 +188,9 @@ public class PieceMoveService {
         return false;
     }
 
-    private boolean isKingInCheck(Board board, Color kingColor) {
+    private boolean isKingInCheck(Color kingColor) {
         Coordinate kingSq = board.getKing(kingColor);
-        return isSquareAttacked(board, kingSq, opposite(kingColor));
+        return isSquareAttacked(kingSq, opposite(kingColor));
     }
 
     private Color opposite(Color c) {

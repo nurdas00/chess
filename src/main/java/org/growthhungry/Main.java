@@ -5,6 +5,7 @@ import org.growthhungry.model.Board;
 import org.growthhungry.model.Coordinate;
 import org.growthhungry.model.Piece;
 import org.growthhungry.model.enums.Color;
+import org.growthhungry.model.enums.MoveResultType;
 import org.growthhungry.model.enums.PieceType;
 import org.growthhungry.model.record.MoveResult;
 import org.growthhungry.service.PieceMoveService;
@@ -13,11 +14,11 @@ import java.util.Scanner;
 
 public class Main {
     private static final boolean USE_UNICODE = false;
-    private static final PieceMoveService pieceMoveService = new PieceMoveService();
     public static void main(String[] args) {
 
         Board board = new Board();
         board.init();
+        PieceMoveService pieceMoveService = new PieceMoveService(board);
         printBoard(board);
 
         Scanner scanner = new Scanner(System.in);
@@ -31,19 +32,28 @@ public class Main {
         Coordinate to = getCoordinate(coordinates[1]);
 
         int k=0;
-        while(board.isActive()) {
-            MoveResult result = pieceMoveService.move(board, from, to, getColor(k));
+        while(true) {
+            MoveResult result = pieceMoveService.move(from, to, getColor(k));
             System.out.println(result);
-            printBoard(board);
+            if(result.resultType() == MoveResultType.OK) {
+                printBoard(board);
+                k++;
+            }
+            if(result.resultType() == MoveResultType.FAIL) {
+                System.out.println(result.message());
+            }
+            if(result.resultType() == MoveResultType.MATE || result.resultType() == MoveResultType.STALEMATE) {
+                System.out.println(result.message());
+                break;
+            }
             move = scanner.nextLine();
             coordinates = move.split(" ");
-            if(coordinates.length > 2) {
+            if(coordinates.length != 2) {
                 System.out.println("Invalid coordinates");
                 return;
             }
             from = getCoordinate(coordinates[0]);
             to = getCoordinate(coordinates[1]);
-            k++;
         }
     }
 

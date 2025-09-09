@@ -6,6 +6,7 @@ import java.util.Stack;
 
 public class MoveHistoryUtil {
 
+    private MoveHistoryUtil(){}
     private static final Stack<MoveSnapshot> history = new Stack<>();
 
     public static void add(MoveSnapshot snapshot) {
@@ -13,7 +14,10 @@ public class MoveHistoryUtil {
     }
 
     public static MoveSnapshot getLast() {
-        return history.peek();
+        if(!history.isEmpty()) {
+            return history.peek();
+        }
+        return null;
     }
 
     public static void deleteLast() {

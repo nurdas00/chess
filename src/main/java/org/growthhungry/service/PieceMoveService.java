@@ -6,6 +6,7 @@ import org.growthhungry.model.enums.PieceType;
 import org.growthhungry.model.enums.Color;
 import org.growthhungry.model.MoveSnapshot;
 import org.growthhungry.model.record.MoveResult;
+import org.growthhungry.rule.EnPassantRule;
 import org.growthhungry.util.MoveHistoryUtil;
 import org.growthhungry.validator.move.MoveValidator;
 import org.growthhungry.validator.factory.MoveValidatorFactory;
@@ -32,24 +33,38 @@ public class PieceMoveService {
             return MoveResult.of(MoveResultType.FAIL, "Invalid move");
         }
 
+        var epOpt = EnPassantRule.detect(board, from, to, piece, MoveHistoryUtil.getLast());
+        Coordinate epSq = epOpt.map(EnPassantRule.EnPassantCapture::capturedAt).orElse(null);
+        Piece     epPc = epOpt.map(EnPassantRule.EnPassantCapture::capturedPiece).orElse(null);
+
         Color opponent = opposite(mover);
 
         MoveSnapshot snapshot = board.makeMove(from, to);
 
+        if (epPc != null) {
+            board.removePiece(epSq);
+        }
+
+        boolean kingMoved = piece.getPieceType() == PieceType.KING;
+        Coordinate prevKing = null;
+        if (kingMoved) { prevKing = board.getKing(mover); board.moveKing(mover, to); }
+
         if (isKingInCheck(mover)) {
+            if (epPc != null) {
+                board.setPiece(epSq, epPc);
+            }
+            if(kingMoved) {
+                board.moveKing(mover, prevKing);
+            }
             board.undoMove(snapshot);
             return MoveResult.of(MoveResultType.FAIL, "You are under check. Try another move");
         }
 
-        if(piece.getPieceType().equals(PieceType.KING)) {
-            board.moveKing(mover, to);
-        }
 
         boolean gaveCheck = isKingInCheck(opponent);
 
         if(gaveCheck) {
             if(isMate(opponent)) {
-                board.setActive(false);
                 return MoveResult.of(MoveResultType.MATE, "Mate, " + mover.name() + " won");
             }
             return MoveResult.of(MoveResultType.CHECK, "CHECK");

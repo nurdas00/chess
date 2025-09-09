@@ -1,14 +1,16 @@
 package org.growthhungry.validator.move;
 
-import org.growthhungry.model.enums.Color;
-import org.growthhungry.model.enums.PieceType;
+import org.growthhungry.model.Board;
 import org.growthhungry.model.Coordinate;
+import org.growthhungry.model.Piece;
+import org.growthhungry.model.enums.Color;
 
 public class PawnMoveValidator extends MoveValidator {
 
     private final boolean isWhite;
 
-    public PawnMoveValidator(Color color) {
+    public PawnMoveValidator(Color color, Board board) {
+        super(board);
         this.isWhite = color.equals(Color.WHITE);
     }
 
@@ -19,25 +21,19 @@ public class PawnMoveValidator extends MoveValidator {
 
         int direction = isWhite ? 1 : -1;
 
-        if (dx == 0 && dy == direction) {
+        Piece destPiece = board.getPieceAt(to);
+
+        if (dx == 0 && dy == direction && destPiece == null) {
             return true;
         }
 
-        if (dx == 0 && dy == 2 * direction &&
+        if (dx == 0 && dy == 2 * direction && destPiece == null &&
                 ((isWhite && from.getY() == 1) || (!isWhite && from.getY() == 6))) {
             return true;
         }
 
-        if (Math.abs(dx) == 1 && dy == direction) {
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public PieceType getPieceType() {
-        return PieceType.PAWN;
+        return Math.abs(dx) == 1 && dy == direction && destPiece != null &&
+                ((isWhite && destPiece.getColor() == Color.BLACK) || (!isWhite && destPiece.getColor() == Color.WHITE));
     }
 
 }

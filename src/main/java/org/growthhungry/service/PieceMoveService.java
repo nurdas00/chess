@@ -6,6 +6,7 @@ import org.growthhungry.model.enums.PieceType;
 import org.growthhungry.model.enums.Color;
 import org.growthhungry.model.MoveSnapshot;
 import org.growthhungry.model.record.MoveResult;
+import org.growthhungry.util.MoveHistoryUtil;
 import org.growthhungry.validator.move.MoveValidator;
 import org.growthhungry.validator.factory.MoveValidatorFactory;
 import org.growthhungry.model.Board;
@@ -26,17 +27,17 @@ public class PieceMoveService {
             return MoveResult.of(MoveResultType.FAIL, "Invalid coordinates");
         }
 
-        MoveValidator validator = MoveValidatorFactory.getMoveValidator(piece.getPieceType(), piece.getColor());
-        if(!validator.check(from, to, piece, board)) {
+        MoveValidator validator = MoveValidatorFactory.getMoveValidator(board, piece.getPieceType(), piece.getColor());
+        if(!validator.check(from, to, piece)) {
             return MoveResult.of(MoveResultType.FAIL, "Invalid move");
         }
 
         Color opponent = opposite(mover);
 
-        MoveSnapshot snap = board.makeMove(from, to);
+        MoveSnapshot snapshot = board.makeMove(from, to);
 
         if (isKingInCheck(mover)) {
-            board.undoMove(snap);
+            board.undoMove(snapshot);
             return MoveResult.of(MoveResultType.FAIL, "You are under check. Try another move");
         }
 
@@ -54,6 +55,7 @@ public class PieceMoveService {
             return MoveResult.of(MoveResultType.CHECK, "CHECK");
         }
 
+        MoveHistoryUtil.add(snapshot);
         return MoveResult.of(MoveResultType.OK, opponent.name() + "s turn to move");
     }
 
@@ -123,8 +125,8 @@ public class PieceMoveService {
                 Piece p = board.getPieceAt(x, y);
                 if (p == null || p.getColor() != byColor) continue;
 
-                MoveValidator v = MoveValidatorFactory.getMoveValidator(p.getPieceType(), p.getColor());
-                if (v.check(new Coordinate(x, y), target, p, board)) {
+                MoveValidator v = MoveValidatorFactory.getMoveValidator(board, p.getPieceType(), p.getColor());
+                if (v.check(new Coordinate(x, y), target, p)) {
                     res.add(new Coordinate(x, y));
                 }
             }
@@ -141,8 +143,8 @@ public class PieceMoveService {
 
                 Coordinate from = new Coordinate(x, y);
 
-                MoveValidator v = MoveValidatorFactory.getMoveValidator(p.getPieceType(), p.getColor());
-                if (!v.check(from, toSq, p, board)) continue;
+                MoveValidator v = MoveValidatorFactory.getMoveValidator(board, p.getPieceType(), p.getColor());
+                if (!v.check(from, toSq, p)) continue;
 
                 MoveSnapshot snap = board.makeMove(from, toSq);
 
@@ -179,8 +181,8 @@ public class PieceMoveService {
                 Piece piece = board.getPieceAt(x, y);
                 if (piece == null || piece.getColor() != byColor) continue;
 
-                MoveValidator v = MoveValidatorFactory.getMoveValidator(piece.getPieceType(), piece.getColor());
-                if (v.check(new Coordinate(x, y), target, piece, board)) {
+                MoveValidator v = MoveValidatorFactory.getMoveValidator(board, piece.getPieceType(), piece.getColor());
+                if (v.check(new Coordinate(x, y), target, piece)) {
                     return true;
                 }
             }

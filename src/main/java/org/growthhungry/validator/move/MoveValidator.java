@@ -1,18 +1,21 @@
 package org.growthhungry.validator.move;
 
-import org.growthhungry.model.enums.Color;
-import org.growthhungry.model.enums.PieceType;
+import lombok.RequiredArgsConstructor;
 import org.growthhungry.model.Board;
 import org.growthhungry.model.Coordinate;
 import org.growthhungry.model.Piece;
+import org.growthhungry.model.enums.Color;
 
+@RequiredArgsConstructor
 public abstract class MoveValidator {
 
-    public boolean check(Coordinate from, Coordinate to, Piece piece, Board board) {
-        return isValidMove(from, to) && isPathClear(board, from, to) && notFriendlyFire(board, to, piece.getColor());
+    protected final Board board;
+
+    public boolean check(Coordinate from, Coordinate to, Piece piece) {
+        return isValidMove(from, to) && isPathClear(from, to) && notFriendlyFire(to, piece.getColor());
     }
     abstract boolean isValidMove(Coordinate from, Coordinate to);
-    public boolean isPathClear(Board board, Coordinate from, Coordinate to) {
+    public boolean isPathClear(Coordinate from, Coordinate to) {
         int stepX = Integer.compare(to.getX(), from.getX());
         int stepY = Integer.compare(to.getY(), from.getY());
 
@@ -29,10 +32,9 @@ public abstract class MoveValidator {
         }
         return true;
     }
-    public boolean notFriendlyFire(Board board, Coordinate to, Color c) {
+    public boolean notFriendlyFire(Coordinate to, Color c) {
         Piece target = board.getPieceAt(to.getX(), to.getY());
 
         return target == null || !c.equals(target.getColor());
     }
-    abstract PieceType getPieceType();
 }

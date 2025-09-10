@@ -5,5 +5,6 @@ public enum MoveResultType {
     FAIL,
     CHECK,
     MATE,
-    STALEMATE
+    STALEMATE,
+    PAWN_CHANGE
 }

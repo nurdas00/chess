@@ -8,6 +8,7 @@ import org.growthhungry.model.MoveSnapshot;
 import org.growthhungry.model.record.MoveResult;
 import org.growthhungry.rule.EnPassantRule;
 import org.growthhungry.util.MoveHistoryUtil;
+import org.growthhungry.util.PawnMetamorphosisUtil;
 import org.growthhungry.validator.move.MoveValidator;
 import org.growthhungry.validator.factory.MoveValidatorFactory;
 import org.growthhungry.model.Board;
@@ -45,11 +46,22 @@ public class PieceMoveService {
             board.removePiece(epSq);
         }
 
+        boolean isPawnMeta = false;
+        int yForPawnsMetamorphosis = mover == Color.WHITE ? 7 : 0;
+        if(piece.getPieceType() == PieceType.PAWN && to.getY() == yForPawnsMetamorphosis) {
+            PawnMetamorphosisUtil.changePawn(board, to);
+            isPawnMeta = true;
+        }
+
         boolean kingMoved = piece.getPieceType() == PieceType.KING;
         Coordinate prevKing = null;
         if (kingMoved) { prevKing = board.getKing(mover); board.moveKing(mover, to); }
 
         if (isKingInCheck(mover)) {
+            if(isPawnMeta) {
+                piece.setPieceType(PieceType.PAWN);
+                board.setPiece(from, piece);
+            }
             if (epPc != null) {
                 board.setPiece(epSq, epPc);
             }

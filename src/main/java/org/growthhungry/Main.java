@@ -35,7 +35,7 @@ public class Main {
         while(true) {
             MoveResult result = pieceMoveService.move(from, to, getColor(k));
             System.out.println(result);
-            if(result.resultType() == MoveResultType.OK) {
+            if(result.resultType() == MoveResultType.OK || result.resultType() == MoveResultType.CHECK) {
                 printBoard(board);
                 k++;
             }
@@ -63,7 +63,7 @@ public class Main {
 
     private static Coordinate getCoordinate(String c) {
         c = c.trim();
-        if (c.length() > 2) {
+        if (c.length() != 2) {
             System.out.println("Invalid coordinate");
         }
 

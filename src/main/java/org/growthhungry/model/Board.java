@@ -9,6 +9,9 @@ public class Board {
     private Coordinate whiteKing;
     private Coordinate blackKing;
 
+    private boolean whiteKingMoved;
+    private boolean blackKingMoved;
+
     public Piece getPieceAt(int x, int y) {
         return cells[x][y];
     }
@@ -60,30 +63,62 @@ public class Board {
         clear();
 
         for (int x = 0; x < 8; x++) {
-            setPiece(new Coordinate(x, 1), preparePiece(PieceType.PAWN, Color.WHITE));
-            setPiece(new Coordinate(x, 6), preparePiece(PieceType.PAWN, Color.BLACK));
+            Coordinate cW = new Coordinate(x, 1);
+            Piece wP = preparePiece(PieceType.PAWN, Color.WHITE);
+            wP.setCoordinate(cW);
+            setPiece(cW, wP);
+
+            Coordinate cB = new Coordinate(x, 6);
+            Piece bP = preparePiece(PieceType.PAWN, Color.BLACK);
+            bP.setCoordinate(cB);
+            setPiece(cB, bP);
         }
 
-        setPiece(new Coordinate(0, 0), preparePiece(PieceType.ROOK, Color.WHITE));
-        setPiece(new Coordinate(7, 0), preparePiece(PieceType.ROOK, Color.WHITE));
-        setPiece(new Coordinate(1, 0), preparePiece(PieceType.KNIGHT, Color.WHITE));
-        setPiece(new Coordinate(6, 0), preparePiece(PieceType.KNIGHT, Color.WHITE));
-        setPiece(new Coordinate(2, 0), preparePiece(PieceType.BISHOP, Color.WHITE));
-        setPiece(new Coordinate(5, 0), preparePiece(PieceType.BISHOP, Color.WHITE));
-        setPiece(new Coordinate(3, 0), preparePiece(PieceType.QUEEN, Color.WHITE));
-        setPiece(new Coordinate(4, 0), preparePiece(PieceType.KING, Color.WHITE));
-        moveKing(Color.WHITE, new Coordinate(4, 0));
+        Piece wR1 = preparePiece(PieceType.ROOK, Color.WHITE);   wR1.setCoordinate(new Coordinate(0,0));
+        setPiece(new Coordinate(0,0), wR1);
+        Piece wR2 = preparePiece(PieceType.ROOK, Color.WHITE);   wR2.setCoordinate(new Coordinate(7,0));
+        setPiece(new Coordinate(7,0), wR2);
 
-        setPiece(new Coordinate(0, 7), preparePiece(PieceType.ROOK, Color.BLACK));
-        setPiece(new Coordinate(7, 7), preparePiece(PieceType.ROOK, Color.BLACK));
-        setPiece(new Coordinate(1, 7), preparePiece(PieceType.KNIGHT, Color.BLACK));
-        setPiece(new Coordinate(6, 7), preparePiece(PieceType.KNIGHT, Color.BLACK));
-        setPiece(new Coordinate(2, 7), preparePiece(PieceType.BISHOP, Color.BLACK));
-        setPiece(new Coordinate(5, 7), preparePiece(PieceType.BISHOP, Color.BLACK));
-        setPiece(new Coordinate(3, 7), preparePiece(PieceType.QUEEN, Color.BLACK));
-        setPiece(new Coordinate(4, 7), preparePiece(PieceType.KING, Color.BLACK));
+        Piece wN1 = preparePiece(PieceType.KNIGHT, Color.WHITE); wN1.setCoordinate(new Coordinate(1,0));
+        setPiece(new Coordinate(1,0), wN1);
+        Piece wN2 = preparePiece(PieceType.KNIGHT, Color.WHITE); wN2.setCoordinate(new Coordinate(6,0));
+        setPiece(new Coordinate(6,0), wN2);
+
+        Piece wB1 = preparePiece(PieceType.BISHOP, Color.WHITE); wB1.setCoordinate(new Coordinate(2,0));
+        setPiece(new Coordinate(2,0), wB1);
+        Piece wB2 = preparePiece(PieceType.BISHOP, Color.WHITE); wB2.setCoordinate(new Coordinate(5,0));
+        setPiece(new Coordinate(5,0), wB2);
+
+        Piece wQ  = preparePiece(PieceType.QUEEN, Color.WHITE);  wQ.setCoordinate(new Coordinate(3,0));
+        setPiece(new Coordinate(4,0), wQ);
+        Piece wK  = preparePiece(PieceType.KING,  Color.WHITE);  wK.setCoordinate(new Coordinate(4,0));
+        setPiece(new Coordinate(3,0), wK);
+        moveKing(Color.WHITE, new Coordinate(4, 0));
+        whiteKingMoved = false;
+
+        Piece bR1 = preparePiece(PieceType.ROOK, Color.BLACK);   bR1.setCoordinate(new Coordinate(0,7));
+        setPiece(new Coordinate(0,7), bR1);
+        Piece bR2 = preparePiece(PieceType.ROOK, Color.BLACK);   bR2.setCoordinate(new Coordinate(7,7));
+        setPiece(new Coordinate(7,7), bR2);
+
+        Piece bN1 = preparePiece(PieceType.KNIGHT, Color.BLACK); bN1.setCoordinate(new Coordinate(1,7));
+        setPiece(new Coordinate(1,7), bN1);
+        Piece bN2 = preparePiece(PieceType.KNIGHT, Color.BLACK); bN2.setCoordinate(new Coordinate(6,7));
+        setPiece(new Coordinate(6,7), bN2);
+
+        Piece bB1 = preparePiece(PieceType.BISHOP, Color.BLACK); bB1.setCoordinate(new Coordinate(2,7));
+        setPiece(new Coordinate(2,7), bB1);
+        Piece bB2 = preparePiece(PieceType.BISHOP, Color.BLACK); bB2.setCoordinate(new Coordinate(5,7));
+        setPiece(new Coordinate(5,7), bB2);
+
+        Piece bQ  = preparePiece(PieceType.QUEEN, Color.BLACK);  bQ.setCoordinate(new Coordinate(3,7));
+        setPiece(new Coordinate(4,7), bQ);
+        Piece bK  = preparePiece(PieceType.KING,  Color.BLACK);  bK.setCoordinate(new Coordinate(4,7));
+        setPiece(new Coordinate(3,7), bK);
         moveKing(Color.BLACK, new Coordinate(4, 7));
+        blackKingMoved = false;
     }
+
 
     public void clear() {
         for (int x = 0; x < 8; x++) {
@@ -100,5 +135,17 @@ public class Board {
         p.setPieceType(type);
         p.setColor(color);
         return p;
+    }
+
+    public boolean isKingMoved(Color color) {
+        return color == Color.WHITE ? whiteKingMoved : blackKingMoved;
+    }
+
+    public void setKingMoved(Color color, boolean moved) {
+        if(color == Color.WHITE) {
+            whiteKingMoved = moved;
+        } else {
+            blackKingMoved = moved;
+        }
     }
 }

@@ -9,7 +9,7 @@ public class MoveValidatorFactory {
 
     public static MoveValidator getMoveValidator(Board board, PieceType pieceType, Color c) {
         return switch (pieceType) {
-            case KING -> new KingMoveValidator(board);
+            case KING -> new KingMoveValidator(board, c);
             case BISHOP -> new BishopMoveValidator(board);
             case ROOK -> new RookMoveValidator(board);
             case QUEEN -> new QueenMoveValidator(board);

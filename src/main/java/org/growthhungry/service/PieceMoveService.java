@@ -1,42 +1,49 @@
 package org.growthhungry.service;
 
 import lombok.RequiredArgsConstructor;
+import org.growthhungry.model.Board;
+import org.growthhungry.model.Coordinate;
+import org.growthhungry.model.MoveSnapshot;
+import org.growthhungry.model.Piece;
+import org.growthhungry.model.enums.Color;
 import org.growthhungry.model.enums.MoveResultType;
 import org.growthhungry.model.enums.PieceType;
-import org.growthhungry.model.enums.Color;
-import org.growthhungry.model.MoveSnapshot;
 import org.growthhungry.model.record.MoveResult;
 import org.growthhungry.rule.EnPassantRule;
 import org.growthhungry.util.MoveHistoryUtil;
 import org.growthhungry.util.PawnMetamorphosisUtil;
-import org.growthhungry.validator.move.MoveValidator;
 import org.growthhungry.validator.factory.MoveValidatorFactory;
-import org.growthhungry.model.Board;
-import org.growthhungry.model.Coordinate;
-import org.growthhungry.model.Piece;
+import org.growthhungry.validator.move.MoveValidator;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.abs;
+import static org.growthhungry.util.CastleUtil.getKingY;
+import static org.growthhungry.util.CastleUtil.getRookX;
 
 @RequiredArgsConstructor
 public class PieceMoveService {
     private final Board board;
 
     public MoveResult move(Coordinate from, Coordinate to, Color mover) {
+        if(!board.isInside(from) || !board.isInside(to)) {
+            return MoveResult.of(MoveResultType.FAIL, "Invalid coordinates");
+        }
         Piece piece = board.getPieceAt(from.getX(), from.getY());
 
-        if(piece == null || !mover.equals(piece.getColor())) {
+        if (piece == null || !mover.equals(piece.getColor())) {
             return MoveResult.of(MoveResultType.FAIL, "Invalid coordinates");
         }
 
         MoveValidator validator = MoveValidatorFactory.getMoveValidator(board, piece.getPieceType(), piece.getColor());
-        if(!validator.check(from, to, piece)) {
+        if (!validator.check(from, to, piece)) {
             return MoveResult.of(MoveResultType.FAIL, "Invalid move");
         }
 
         var epOpt = EnPassantRule.detect(board, from, to, piece, MoveHistoryUtil.getLast());
         Coordinate epSq = epOpt.map(EnPassantRule.EnPassantCapture::capturedAt).orElse(null);
-        Piece     epPc = epOpt.map(EnPassantRule.EnPassantCapture::capturedPiece).orElse(null);
+        Piece epPc = epOpt.map(EnPassantRule.EnPassantCapture::capturedPiece).orElse(null);
 
         Color opponent = opposite(mover);
 
@@ -48,25 +55,48 @@ public class PieceMoveService {
 
         boolean isPawnMeta = false;
         int yForPawnsMetamorphosis = mover == Color.WHITE ? 7 : 0;
-        if(piece.getPieceType() == PieceType.PAWN && to.getY() == yForPawnsMetamorphosis) {
+        if (piece.getPieceType() == PieceType.PAWN && to.getY() == yForPawnsMetamorphosis) {
             PawnMetamorphosisUtil.changePawn(board, to);
             isPawnMeta = true;
         }
-
+        MoveSnapshot castleSnapshot = null;
         boolean kingMoved = piece.getPieceType() == PieceType.KING;
+        boolean isCastle = kingMoved && abs(from.getX() - to.getX()) == 2;
+        boolean returnKingMoved = false;
         Coordinate prevKing = null;
-        if (kingMoved) { prevKing = board.getKing(mover); board.moveKing(mover, to); }
+        if (kingMoved) {
+            prevKing = board.getKing(mover);
+            if (isCastle) {
+                int rookDestX = (from.getX() + to.getX()) / 2;
+                int kingY = getKingY(mover);
+                int rookX = getRookX(from, to);
+                Piece rook = board.getPieceAt(rookX, kingY);
+                castleSnapshot = board.makeMove(rook.getCoordinate(), new Coordinate(rookDestX, rook.getCoordinate().getY()));
+            }
+            board.moveKing(mover, to);
+            if (!board.isKingMoved(mover)) {
+                returnKingMoved = true;
+                board.setKingMoved(mover, true);
+            }
+
+        }
 
         if (isKingInCheck(mover)) {
-            if(isPawnMeta) {
+            if (returnKingMoved) {
+                board.setKingMoved(mover, false);
+            }
+            if (isPawnMeta) {
                 piece.setPieceType(PieceType.PAWN);
                 board.setPiece(from, piece);
             }
             if (epPc != null) {
                 board.setPiece(epSq, epPc);
             }
-            if(kingMoved) {
+            if (kingMoved) {
                 board.moveKing(mover, prevKing);
+            }
+            if (isCastle) {
+                board.undoMove(castleSnapshot);
             }
             board.undoMove(snapshot);
             return MoveResult.of(MoveResultType.FAIL, "You are under check. Try another move");
@@ -75,8 +105,8 @@ public class PieceMoveService {
 
         boolean gaveCheck = isKingInCheck(opponent);
 
-        if(gaveCheck) {
-            if(isMate(opponent)) {
+        if (gaveCheck) {
+            if (isMate(opponent)) {
                 return MoveResult.of(MoveResultType.MATE, "Mate, " + mover.name() + " won");
             }
             return MoveResult.of(MoveResultType.CHECK, "CHECK");
@@ -193,10 +223,11 @@ public class PieceMoveService {
         int x = a.getX() + dx, y = a.getY() + dy;
         while (x != b.getX() || y != b.getY()) {
             path.add(new Coordinate(x, y));
-            x += dx; y += dy;
+            x += dx;
+            y += dy;
         }
 
-        if(!path.isEmpty()) {
+        if (!path.isEmpty()) {
             path.remove(path.size() - 1);
         }
         return path;

@@ -90,9 +90,9 @@ public class Board {
         setPiece(new Coordinate(5,0), wB2);
 
         Piece wQ  = preparePiece(PieceType.QUEEN, Color.WHITE);  wQ.setCoordinate(new Coordinate(3,0));
-        setPiece(new Coordinate(4,0), wQ);
+        setPiece(new Coordinate(3,0), wQ);
         Piece wK  = preparePiece(PieceType.KING,  Color.WHITE);  wK.setCoordinate(new Coordinate(4,0));
-        setPiece(new Coordinate(3,0), wK);
+        setPiece(new Coordinate(4,0), wK);
         moveKing(Color.WHITE, new Coordinate(4, 0));
         whiteKingMoved = false;
 
@@ -112,9 +112,9 @@ public class Board {
         setPiece(new Coordinate(5,7), bB2);
 
         Piece bQ  = preparePiece(PieceType.QUEEN, Color.BLACK);  bQ.setCoordinate(new Coordinate(3,7));
-        setPiece(new Coordinate(4,7), bQ);
+        setPiece(new Coordinate(3,7), bQ);
         Piece bK  = preparePiece(PieceType.KING,  Color.BLACK);  bK.setCoordinate(new Coordinate(4,7));
-        setPiece(new Coordinate(3,7), bK);
+        setPiece(new Coordinate(4,7), bK);
         moveKing(Color.BLACK, new Coordinate(4, 7));
         blackKingMoved = false;
     }

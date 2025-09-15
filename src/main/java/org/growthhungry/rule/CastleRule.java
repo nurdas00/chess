@@ -21,7 +21,7 @@ public class CastleRule {
                 !isRookOnPlace(board, from, to, color)) {
             return false;
         }
-        int i = toRight ? 4 : 2;
+        int i = toRight ? 5 : 3;
         while (i > 0 && i < 7) {
             if(board.getPieceAt(i, kingY) != null) {
                 return false;
